@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>RecognizeMe CS501</title>
+</head>
+<body>
+  <div align="center">
+    <form action="/submit" method="POST" id="webcam_form">
+        <input type="hidden" name="video_feed" value="video_feed_default_value" id="video_feed"/>
+    </form>
+    <video id="player" controls autoplay></video>
+      <br/><br/><button id="capture">Login</button>
+      <canvas id="canvas" style="display: none;" width=320 height=240></canvas>
+  </div>
+  <script>
+    const player = document.getElementById('player');
+    const canvas = document.getElementById('canvas');
+    const context = canvas.getContext('2d');
+    const captureButton = document.getElementById('capture');
+
+    const constraints = {
+      video: true,
+    };
+
+    captureButton.addEventListener('click', () => {
+      // Draw the video frame to the canvas.
+      context.drawImage(player, 0, 0, canvas.width, canvas.height);
+      document.getElementById('video_feed').value = canvas.toDataURL();
+      document.getElementById('webcam_form').submit();
+    });
+
+    // Attach the video stream to the video element and autoplay.
+    navigator.mediaDevices.getUserMedia(constraints)
+      .then((stream) => {
+        player.srcObject = stream;
+      });
+</script>
+
+</body>
+</html>
