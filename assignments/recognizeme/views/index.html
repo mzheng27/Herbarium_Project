@@ -10,29 +10,54 @@
     </form>
     <video id="player" controls autoplay></video>
       <br/><br/><button id="capture">Login</button>
-      <canvas id="canvas" style="display: none;" width=320 height=240></canvas>
+    <p id="loading" style="display:none;"> Loading! </p>
   </div>
   <script>
     const player = document.getElementById('player');
-    const canvas = document.getElementById('canvas');
-    const context = canvas.getContext('2d');
+
     const captureButton = document.getElementById('capture');
+
 
     const constraints = {
       video: true,
     };
 
-    captureButton.addEventListener('click', () => {
-      // Draw the video frame to the canvas.
-      context.drawImage(player, 0, 0, canvas.width, canvas.height);
-      document.getElementById('video_feed').value = canvas.toDataURL();
-      document.getElementById('webcam_form').submit();
-    });
-
     // Attach the video stream to the video element and autoplay.
     navigator.mediaDevices.getUserMedia(constraints)
       .then((stream) => {
         player.srcObject = stream;
+
+        let mediaRecorder = new MediaRecorder(stream);
+        let chunks = [];
+
+        captureButton.addEventListener("click", (ev) => {
+          
+          mediaRecorder.start();
+          document.getElementById("loading").style = "display:block;";
+
+          setTimeout(event => {
+            console.log("stopping");
+            mediaRecorder.stop();
+          }, 3000);
+
+        });
+
+        mediaRecorder.ondataavailable = (ev) => {
+          chunks.push(ev.data);
+        }
+
+        mediaRecorder.onstop = (ev) => {
+          const reader = new FileReader();
+          let blob =  new Blob(chunks, {'type': 'video/mp4;'});
+          chunks = [];
+          reader.readAsDataURL(blob);
+
+          reader.addEventListener('load', () => {
+            let data = reader.result;
+            document.getElementById('video_feed').value = data;
+            document.getElementById('webcam_form').submit();
+          }, false);
+        }
       });
 </script>
 
