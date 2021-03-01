@@ -13,6 +13,7 @@ from flask import Flask,request,jsonify, render_template
 import numpy as np
 import cv2
 import base64
+import json
 
 app = Flask(__name__, template_folder="views")
 
@@ -28,11 +29,25 @@ def test():
 
 @app.route('/submit',methods=['POST'])
 def submit():
-    image_uri = request.form['video_feed']
+    frame_uris = json.loads(request.form['video_feed'])
 
-    if image_uri:
-        return image_uri
-        # return render_template("logged_in.html")
-    return render_template("unauthorized.html")
+    pictures = []
+    for i in frame_uris:
+        encoded_image = frame_uris[i].split(",")[1]
+        binary = BytesIO(base64.b64decode(encoded_image))
+        image = Image.open(binary).convert("L")
+        pictures.append(np.asarray(image))
+
+    # Numpy array holding gray-scale video frames as numpy arrays
+    data = np.array(pictures)
+
+    # Pass in data to ML model and check if the user has been authorized or not
+    logged_in = True
+
+
+    if logged_in:
+        return render_template("logged_in.html")
+    else:
+        return render_template("unauthorized.html")
 if __name__ == "__main__":
     app.run(debug=True)

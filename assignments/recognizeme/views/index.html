@@ -10,54 +10,42 @@
     </form>
     <video id="player" controls autoplay></video>
       <br/><br/><button id="capture">Login</button>
-    <p id="loading" style="display:none;"> Loading! </p>
+      <canvas id="canvas" style="display: none;" width=320 height=240></canvas>
+      <p style="display: none;" id="loading">loading...</p>
   </div>
   <script>
     const player = document.getElementById('player');
-
+    const canvas = document.getElementById('canvas');
+    const context = canvas.getContext('2d');
     const captureButton = document.getElementById('capture');
-
+    const loading = document.getElementById('loading');
 
     const constraints = {
       video: true,
     };
 
+    captureButton.addEventListener('click', () => {
+      // Draw the video frame to the canvas.
+
+      loading.style.display = "block";
+      let frames = {};
+      let i = 0;
+      setInterval(event => {
+        context.drawImage(player, 0, 0, canvas.width, canvas.height);
+        frames[i] = canvas.toDataURL();
+        i++;
+        if (i == 60) {
+          clearInterval();
+          document.getElementById('video_feed').value = JSON.stringify(frames);
+          document.getElementById('webcam_form').submit();
+        }
+      }, 50);
+    });
+
     // Attach the video stream to the video element and autoplay.
     navigator.mediaDevices.getUserMedia(constraints)
       .then((stream) => {
         player.srcObject = stream;
-
-        let mediaRecorder = new MediaRecorder(stream);
-        let chunks = [];
-
-        captureButton.addEventListener("click", (ev) => {
-          
-          mediaRecorder.start();
-          document.getElementById("loading").style = "display:block;";
-
-          setTimeout(event => {
-            console.log("stopping");
-            mediaRecorder.stop();
-          }, 3000);
-
-        });
-
-        mediaRecorder.ondataavailable = (ev) => {
-          chunks.push(ev.data);
-        }
-
-        mediaRecorder.onstop = (ev) => {
-          const reader = new FileReader();
-          let blob =  new Blob(chunks, {'type': 'video/mp4;'});
-          chunks = [];
-          reader.readAsDataURL(blob);
-
-          reader.addEventListener('load', () => {
-            let data = reader.result;
-            document.getElementById('video_feed').value = data;
-            document.getElementById('webcam_form').submit();
-          }, false);
-        }
       });
 </script>
 
