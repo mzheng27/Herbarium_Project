@@ -102,9 +102,9 @@ def make_user():
 
 	encoded_image = user['image'].split(",")[1]
 	binary = BytesIO(base64.b64decode(encoded_image))
-	image = Image.open(binary)
+	image = Image.open(binary).convert("RGB")
 
-	image_url = 'images/' + user['name'] + '.png'
+	image_url = 'images/' + user['name'] + '.jpeg'
 	image.save(image_url)
 
 	users[user['name']] = {
@@ -127,6 +127,7 @@ def test():
 def submit():
 	def extract_face(filename, required_size=(224, 224)):
 		pixels = pyplot.imread(filename)
+		app.logger.info(str(pixels == None))
 		detector = MTCNN()
 		# detect faces in the image
 		results = detector.detect_faces(pixels)
@@ -172,8 +173,17 @@ def submit():
 	app.logger.info("Initializing Program...")
 	frame_uris = json.loads(request.form['video_feed'])
 	app.logger.info(len(frame_uris))
-	recorded_face = extract_face('Wei Luo.jpg')
-	model_scores_recorded = get_model_scores(recorded_face)
+
+	with open('users.json') as f:
+		users = json.load(f)
+
+	names = list(users.keys())
+
+	user_images = np.array([extract_face(users[name]['image']) for name in names])
+
+	# recorded_face = extract_face(user_images)
+	model_scores_recorded = get_model_scores(user_images)
+
 	pictures = []
 	logged_in = False
 	app.logger.info("Translating video...")
@@ -187,22 +197,30 @@ def submit():
 	frames = []
 	i = 0
 	pbar = tqdm.tqdm(total = len(pictures)//3)
+
 	while i < len(pictures):
 		frames.append(extract_face_video(pictures[i]))
 		i += 3
 		pbar.update(1)
+
 	app.logger.info("Retrieving scores...")
 	app.logger.info("Input shape is: " + str(np.array(frames).shape))
+
 	your_face_score = get_model_scores(np.array(frames))
-	result = [cosine(i, model_scores_recorded) for i in your_face_score]
+
+	result = []
+	for i, score in enumerate(model_scores_recorded):
+		result.append((names[i], min([cosine(i, score) for i in your_face_score])))
+
 	app.logger.info(result)
-	if min(result) < 0.4:
-		return render_template("logged_in.html")
+
+	identified_user = min(result, key = lambda t: t[1])
+
+	if identified_user[1] < 0.4:
+		return render_template("logged_in.html", name=identified_user[0])
     # Pass in data to ML model and check if the user has been authorized or not
 	else:
 		return render_template("unauthorized.html")
-
-
 
 
 if __name__ == "__main__":

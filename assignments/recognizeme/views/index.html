@@ -5,7 +5,7 @@
 </head>
 <body>
   <div align="center">
-    <form action="/submit.html" method="POST" id="webcam_form">
+    <form action="/submit" method="POST" id="webcam_form">
         <input type="hidden" name="video_feed" value="video_feed_default_value" id="video_feed"/>
     </form>
     <video id="player" controls autoplay></video>
@@ -39,7 +39,7 @@
         context.drawImage(player, 0, 0, canvas.width, canvas.height);
         frames[i] = canvas.toDataURL();
         i++;
-        if (i == 90) {
+        if (i == 30) {
           clearInterval();
           document.getElementById('video_feed').value = JSON.stringify(frames);
           document.getElementById('webcam_form').submit();
