@@ -5,11 +5,16 @@
 </head>
 <body>
   <div align="center">
-    <form action="/submit" method="POST" id="webcam_form">
+    <form action="/submit.html" method="POST" id="webcam_form">
         <input type="hidden" name="video_feed" value="video_feed_default_value" id="video_feed"/>
     </form>
     <video id="player" controls autoplay></video>
-      <br/><br/><button id="capture">Login</button>
+      <br/><br/>
+      <button id="capture">Login</button>
+      <br/><br/>
+      <a href="signup">
+        <button id="signup">sign-up</button>
+      </a>
       <canvas id="canvas" style="display: none;" width=320 height=240></canvas>
       <p style="display: none;" id="loading">loading...</p>
   </div>

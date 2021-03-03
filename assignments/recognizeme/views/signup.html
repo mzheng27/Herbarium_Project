@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>RecognizeMe CS501 | Sign-Up</title>
+</head>
+<body>
+  <div align="center">
+    <form action="/make_user" method="POST" id="signup_form">
+        <input type="hidden" name="user_info" value="user_info_default_value" id="user_info"/>
+    </form>
+    <video id="player" controls autoplay></video>
+      <br/><br/>
+      <label>Name:</label>
+      <input type="text" name="name" id="name">
+      <button id="make_account">Take Picture and Make Account</button>
+
+      <canvas id="canvas" style="display: none;" width=320 height=240></canvas>
+  </div>
+  <script>
+    const player = document.getElementById('player');
+    const canvas = document.getElementById('canvas');
+    const context = canvas.getContext('2d');
+    const makeAccount = document.getElementById('make_account');
+    const constraints = {
+      video: true,
+    };
+
+    makeAccount.addEventListener('click', () => {
+      let name = document.getElementById('name').value;
+      let image = canvas.toDataURL();
+      
+      if (name !== null && name.length != 0) {
+        context.drawImage(player, 0, 0, canvas.width, canvas.height);
+        let image = canvas.toDataURL();
+        document.getElementById('user_info').value = JSON.stringify({name: name, image: image});
+        document.getElementById('signup_form').submit();
+      }
+      // Draw the video frame to the canvas.
+
+      // let frames = {};
+      // let i = 0;
+      // setInterval(event => {
+      //   context.drawImage(player, 0, 0, canvas.width, canvas.height);
+      //   frames[i] = canvas.toDataURL();
+      //   i++;
+      //   if (i == 60) {
+      //     clearInterval();
+      //     document.getElementById('video_feed').value = JSON.stringify(frames);
+      //     document.getElementById('webcam_form').submit();
+      //   }
+      // }, 50);
+    });
+
+    // Attach the video stream to the video element and autoplay.
+    navigator.mediaDevices.getUserMedia(constraints)
+      .then((stream) => {
+        player.srcObject = stream;
+      });
+</script>
+
+</body>
+</html>

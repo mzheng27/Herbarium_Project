@@ -89,6 +89,35 @@ class FastMTCNN(object):
 def home():
     return render_template('./index.html')
 
+@app.route('/signup')
+def signup():
+	return render_template('/signup.html')
+
+@app.route('/make_user', methods=['POST'])
+def make_user():
+	user = json.loads(request.form['user_info'])
+
+	with open('users.json') as f:
+		users = json.load(f)
+
+	encoded_image = user['image'].split(",")[1]
+	binary = BytesIO(base64.b64decode(encoded_image))
+	image = Image.open(binary)
+
+	image_url = 'images/' + user['name'] + '.png'
+	image.save(image_url)
+
+	users[user['name']] = {
+		'name': user['name'],
+		'image': image_url
+	}
+
+	with open('users.json', 'w') as f:
+		json.dump(users, f)
+
+	f.close()
+
+	return render_template('./index.html')
 
 @app.route('/test',methods=['GET'])
 def test():
