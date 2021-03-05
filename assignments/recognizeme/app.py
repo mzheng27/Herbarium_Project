@@ -125,6 +125,13 @@ def submit():
 		face = pixels[y1:y2, x1:x2]
 		# resize pixels to the model size
 		image = Image.fromarray(face)
+
+		## If the face is tiny, you probably aren't trying to log on to your laptop
+		full_img = Image.fromarray(pixels)
+		print((width*height) / (full_img.size[0]*full_img.size[1]))
+		if width*height < full_img.size[0]*full_img.size[1]*0.9:
+			return [-1]
+
 		image = image.resize(required_size)
 		face_array = asarray(image)
 		return face_array
@@ -143,27 +150,83 @@ def submit():
 	app.logger.info("Initializing Program...")
 	frame_uris = json.loads(request.form['video_feed'])
 	app.logger.info(len(frame_uris))
-	recorded_face = extract_face('Wei Luo.jpg')
+	recorded_face = extract_face('jasonli.jpg')
 	model_scores_recorded = get_model_scores(recorded_face)
 	pictures = []
 	logged_in = False
 	app.logger.info("Translating video...")
+
+	# Instantiate background subtractor and kernel
+	back_sub = cv2.createBackgroundSubtractorMOG2(history=700, varThreshold=50, detectShadows=False)    
+	kernel = np.ones((30,30),np.uint8)
+
+
 	for i in frame_uris:
 		encoded_image = frame_uris[i].split(",")[1]
 		binary = BytesIO(base64.b64decode(encoded_image))
 		image = Image.open(binary)
 		image = image.convert("RGB")
+		# image.save("temp"+str(i)+".jpg")
+
+		## Background subtraction on the images
+		tmp = np.float32(image)
+		fg_mask = back_sub.apply(tmp)
+		fg_mask = cv2.morphologyEx(fg_mask, cv2.MORPH_CLOSE, kernel)
+		fg_mask = cv2.medianBlur(fg_mask, 5) 
+		## Threshold them
+		_, fg_mask = cv2.threshold(fg_mask,127,255,cv2.THRESH_BINARY)
+		img_x = fg_mask.shape[0]
+		img_y = fg_mask.shape[1]
+
+		## Check 1: See if bounding rect is too large/takes up much of the frame
+		x,y,w,h = cv2.boundingRect(fg_mask)
+		cpy = fg_mask.copy()
+		cpy = cv2.rectangle(cpy, (x, y), (x+w, y+h), (255, 0, 0), 2)
+		# savepath = "/Users/jasonli/Desktop/BU/Junior/Spring2021/CS791/herbarium/Herbarium_Project/assignments/recognizeme/rect"+str(i)+".jpg"
+		# cv2.imwrite(savepath, cpy)
+		if (w*h) > (img_x*img_y*0.75):# or ((w*h) < (img_x*img_y*0.2)):
+			continue
+		## Check 2: If mask takes up much of bounding box
+		temp = [1 if p > 0 else 0 for x in fg_mask for p in x]
+		if w!=0 and h!=0:
+			if (sum(temp)/(w*h)) > 0.65:
+				continue 
+
+		## Find contours
+		contours, hierarchy = cv2.findContours(fg_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+		contour_output = np.zeros(np.shape(fg_mask), dtype='uint8') # new blank canvas
+
+		if len(contours) != 0:
+			cv2.drawContours(contour_output, contours, -1, (255,0,0), 2)
+
+		contour_area = sum([cv2.contourArea(contour) for contour in contours])
+		pct_area = contour_area / (fg_mask.shape[0]*fg_mask.shape[1]) # Contour area's percent of frame
+
+		## Check 3: contour area vs bounding rect
+		if (contour_area > (w*h*0.7)): # or contour_area < (w*h*0.2)):
+			continue
+
+		# savepath = "/Users/jasonli/Desktop/BU/Junior/Spring2021/CS791/herbarium/Herbarium_Project/assignments/recognizeme/temp"+str(i)+".jpg"
+		# cv2.imwrite(savepath, fg_mask)
+
 		pictures.append(np.array(image))
 	pictures = np.array(pictures)
 	frames = []
 	i = 0
 	pbar = tqdm.tqdm(total = len(pictures)//3)
 	while i < len(pictures):
-		frames.append(extract_face_video(pictures[i]))
+		tmp = extract_face_video(pictures[i])
+		if len(tmp) > 1:
+			frames.append(tmp)
 		i += 3
 		pbar.update(1)
 	app.logger.info("Retrieving scores...")
 	app.logger.info("Input shape is: " + str(np.array(frames).shape))
+
+	# Check if any frames were saved. if not then unauthorized
+	if (len(frames) < 7):
+		return render_template("unauthorized.html")
+
 	your_face_score = get_model_scores(np.array(frames))
 	result = [cosine(i, model_scores_recorded) for i in your_face_score]
 	app.logger.info(result)
