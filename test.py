@@ -46,6 +46,8 @@ def copyStateDict(state_dict):
 
 def str2bool(v):
     return v.lower() in ("yes", "y", "true", "t", "1")
+dat_path = '/Users/minglan/Downloads/Herbarium/CRAFT-pytorch-master/t01'
+result_folder ='/Users/minglan/Downloads/Herbarium/CRAFT-pytorch-master/result/'
 
 parser = argparse.ArgumentParser(description='CRAFT Text Detection')
 parser.add_argument('--trained_model', default='/Users/minglan/Downloads/craft_mlt_25k.pth', type=str, help='pretrained model')
@@ -68,7 +70,6 @@ args = parser.parse_args()
 image_list, _, _ = file_utils.get_files(args.test_folder)
 image_list = []
 
-dat_path = '/Users/minglan/Downloads/Herbarium/CRAFT-pytorch-master/t01'
 for img_name in os.listdir(dat_path):
     if (".png" in img_name):
         img_path = os.path.join(dat_path, img_name)
@@ -77,7 +78,6 @@ for img_name in os.listdir(dat_path):
 
 
 #result_folder = '/Users/minglan/Downloads/Herbarium/CRAFT-pytorch-master/result/'
-result_folder ='/Users/minglan/Downloads/Herbarium/CRAFT-pytorch-master/result/'
 if not os.path.isdir(result_folder):
     os.mkdir(result_folder)
 
