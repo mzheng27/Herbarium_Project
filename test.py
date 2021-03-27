@@ -1,4 +1,4 @@
-"""  
+"""
 Copyright (c) 2019-present NAVER Corp.
 MIT License
 """
@@ -46,7 +46,7 @@ def copyStateDict(state_dict):
 
 def str2bool(v):
     return v.lower() in ("yes", "y", "true", "t", "1")
-dat_path = '/Users/minglan/Downloads/Herbarium/CRAFT-pytorch-master/t01'
+dat_path = '/Users/minglan/Downloads/Herbarium/CRAFT-pytorch-master/s01/s01-000u'
 result_folder ='/Users/minglan/Downloads/Herbarium/CRAFT-pytorch-master/result/'
 
 parser = argparse.ArgumentParser(description='CRAFT Text Detection')
@@ -178,7 +178,7 @@ if __name__ == '__main__':
 
     # load data
     for k, image_path in enumerate(image_list):
-        #print("Test image {:d}/{:d}: {:s}".format(k+1, len(image_list), image_path), end='\r')
+        print("Test image {:d}/{:d}: {:s}".format(k+1, len(image_list), image_path), end='\r')
         image = imgproc.loadImage(image_path)
         
         bboxes, polys, score_text = test_net(net, image, args.text_threshold, args.link_threshold, args.low_text, args.cuda, args.poly, refine_net)
@@ -186,8 +186,8 @@ if __name__ == '__main__':
         
         # save score text
         filename, file_ext = os.path.splitext(os.path.basename(image_path))
-        mask_file = result_folder + "/res_" + filename + '_mask.jpg'
-        cv2.imwrite(mask_file, score_text)
+        #mask_file = result_folder + "/res_" + filename + '_mask.jpg'
+        #cv2.imwrite(mask_file, score_text)
         
         file_utils.saveResult(image_path, image[:,:,::-1], polys, dirname=result_folder)
         #temptext = result_folder
@@ -212,32 +212,19 @@ if __name__ == '__main__':
         for i in range(len(newboxes)):
             area[i] = rect_area(newboxes[i])
         
-        key = max(area, key=area.get)
-        coordinates = newboxes[key]
-        print(coordinates)
-        x, _ = coordinates[3]
-        _, y = coordinates[0]
-        w, _ = coordinates[1]
-        _, h = coordinates[2]
-        w = w - x
-        h = h - y
-        #[[366, 28], [984, 28], [981, 244], [366, 237]]
-#        ROI = np.array(coordinates, dtype="float32").astype("int")
-#        print(ROI)
-#        cv2.drawContours(image,np.int0([coordinates]),0,(255,0,0),2)
-        
-        newimage=image [y + 2:y + h-2, x + 2:x + w-2]
-        cv2.imwrite("{}.png".format(filename), newimage)
-#        cv2.imwrite("{}.png".format(filename), ROI)
-#        mask = np.zeros_like(image) # Create mask where white is what we want, black otherwise
-#        cv2.drawContours(image,np.int0([coordinates]),0,(255,0,0),-1)
-#        out = np.zeros_like(image) # Extract out the object and place into output image
-##        ROI = image[y:y+h, x:x+w]
-#        out[mask == 255] = image[mask == 255]
-#        (y, x) = np.where(mask == 255)
-#        (topy, topx) = (np.min(y), np.min(x))
-#        (bottomy, bottomx) = (np.max(y), np.max(x))
-#        ROI = out[topy:bottomy+1, topx:bottomx+1]
-        
+        try:
+            key = max(area, key=area.get)
+            coordinates = newboxes[key]
+            #print(coordinates)
+            x, _ = coordinates[3]
+            _, y = coordinates[0]
+            w, _ = coordinates[1]
+            _, h = coordinates[2]
+            w = w - x
+            h = h - y
+            newimage=image [y + 2:y + h-2, x + 2:x + w-2]
+            cv2.imwrite("{}.png".format('/Users/minglan/Desktop/testlabel/' + filename), newimage)
+        except:
+            pass
 
     print("elapsed time : {}s".format(time.time() - t))
